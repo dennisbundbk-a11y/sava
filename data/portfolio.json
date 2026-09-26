@@ -1,0 +1,16 @@
+[
+  {
+    "ticker": "SCOM",
+    "name": "Safaricom Plc",
+    "shares": 500,
+    "purchasePrice": 28.35,
+    "purchaseDate": "2026-01-05"
+  },
+  {
+    "ticker": "KCB",
+    "name": "KCB Group",
+    "shares": 200,
+    "purchasePrice": 71.00,
+    "purchaseDate": "2026-03-12"
+  }
+]

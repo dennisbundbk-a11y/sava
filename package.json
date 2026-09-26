@@ -1,0 +1,16 @@
+{
+  "name": "savannah-market",
+  "version": "1.0.0",
+  "description": "Savannah Market — AI-powered NSE investing site (static pages) + a Gemini/Telegram briefing cron running on Vercel.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "once": "node scripts/run-once.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5"
+  }
+}

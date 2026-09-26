@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Savannah Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#111111; --bg-0:#0a0b0c; --bg-1:#131517; --bg-2:#1a1c1f;
+    --red:#c8102e; --green:#006b3f; --green-bright:#17a669;
+    --gold:#f2c94c; --white:#ffffff;
+    --ink-60:rgba(255,255,255,.60); --ink-40:rgba(255,255,255,.40); --ink-25:rgba(255,255,255,.25);
+    --glass-bg:rgba(255,255,255,.045); --glass-brd:rgba(255,255,255,.09);
+    --serif:'Fraunces', serif; --sans:'Inter', sans-serif; --mono:'IBM Plex Mono', monospace;
+    --sb-w:236px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg-0); color:var(--white); font-family:var(--sans); -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  ::selection{background:var(--gold); color:var(--black);}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--gold); outline-offset:2px; border-radius:4px;}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important; transition-duration:.001ms !important;}}
+
+  .glass{background:var(--glass-bg); border:1px solid var(--glass-brd); border-radius:14px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);}
+
+  /* ============ SHELL ============ */
+  .shell{display:flex; min-height:100vh;}
+
+  /* ---- sidebar ---- */
+  .sidebar{
+    width:var(--sb-w); flex-shrink:0; background:var(--bg-1); border-right:1px solid var(--glass-brd);
+    display:flex; flex-direction:column; padding:22px 16px; position:sticky; top:0; height:100vh;
+  }
+  .logo{display:flex; align-items:center; gap:10px; font-family:var(--serif); font-weight:600; font-size:1.12rem; padding:0 8px 26px;}
+  .logo-mark{width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg, var(--gold), var(--green-bright)); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .logo-mark svg{width:14px; height:14px;}
+  .nav-group{margin-bottom:22px;}
+  .nav-label{font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-40); padding:0 10px; margin-bottom:8px; display:block;}
+  .nav-item{
+    display:flex; align-items:center; gap:11px; padding:10px 10px; border-radius:9px;
+    font-size:.87rem; color:var(--ink-60); margin-bottom:2px; transition:background .15s, color .15s;
+  }
+  .nav-item svg{width:17px; height:17px; flex-shrink:0; stroke:currentColor;}
+  .nav-item:hover{background:rgba(255,255,255,.04); color:var(--white);}
+  .nav-item.active{background:rgba(242,201,76,.1); color:var(--gold); font-weight:600;}
+  .sb-bottom{margin-top:auto; padding-top:16px; border-top:1px solid var(--glass-brd);}
+  .plan-chip{display:flex; align-items:center; justify-content:space-between; padding:12px; border-radius:10px; background:rgba(255,255,255,.03); font-size:.78rem;}
+  .plan-chip .up-btn{font-family:var(--mono); font-size:.72rem; color:var(--gold); font-weight:600;}
+
+  @media(max-width:960px){ .sidebar{display:none;} }
+
+  /* ---- main ---- */
+  .main{flex:1; min-width:0;}
+  .topbar{
+    position:sticky; top:0; z-index:20; height:68px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 32px; background:rgba(10,11,12,.75); backdrop-filter:blur(14px); border-bottom:1px solid var(--glass-brd);
+  }
+  .search-box{
+    display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.04); border:1px solid var(--glass-brd);
+    border-radius:9px; padding:9px 14px; width:340px; max-width:44vw;
+  }
+  .search-box svg{width:15px; height:15px; stroke:var(--ink-40); flex-shrink:0;}
+  .search-box input{background:none; border:none; outline:none; color:var(--white); font-size:.85rem; width:100%; font-family:var(--sans);}
+  .search-box input::placeholder{color:var(--ink-40);}
+  .top-right{display:flex; align-items:center; gap:16px;}
+  .icon-btn{width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.04); border:1px solid var(--glass-brd); cursor:pointer; position:relative;}
+  .icon-btn svg{width:16px; height:16px; stroke:var(--ink-60);}
+  .dot-badge{position:absolute; top:6px; right:7px; width:6px; height:6px; border-radius:50%; background:var(--gold);}
+  .user-chip{display:flex; align-items:center; gap:10px; padding-left:14px; border-left:1px solid var(--glass-brd);}
+  .avatar-sm{width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--green-bright), var(--gold));}
+  .user-name{font-size:.83rem; font-weight:600;}
+  .user-plan{font-size:.7rem; color:var(--ink-40); font-family:var(--mono);}
+
+  .content{padding:32px; max-width:1400px;}
+  .page-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:26px; flex-wrap:wrap; gap:14px;}
+  .page-head h1{font-family:var(--serif); font-weight:600; font-size:1.7rem;}
+  .page-sub{color:var(--ink-40); font-size:.85rem; margin-top:5px; font-family:var(--mono);}
+  .refresh-tag{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:.75rem; color:var(--ink-40);}
+  .refresh-tag .dot{width:6px; height:6px; border-radius:50%; background:var(--green-bright); animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(23,166,105,.5);}70%{box-shadow:0 0 0 6px rgba(23,166,105,0);}100%{box-shadow:0 0 0 0 rgba(23,166,105,0);}}
+
+  h2.sec-title{font-family:var(--serif); font-weight:600; font-size:1.15rem; margin-bottom:14px; display:flex; align-items:center; gap:10px;}
+  .sec-block{margin-bottom:36px;}
+  .as-of{font-family:var(--mono); font-size:.7rem; color:var(--ink-40); font-weight:400;}
+
+  /* ---- index cards ---- */
+  .index-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  @media(max-width:1100px){.index-row{grid-template-columns:repeat(2,1fr);}}
+  .idx-card{padding:20px 22px;}
+  .idx-card .name{font-size:.78rem; color:var(--ink-40); margin-bottom:9px;}
+  .idx-card .val{font-family:var(--mono); font-size:1.35rem; font-weight:600; margin-bottom:5px;}
+  .idx-card .chg{font-family:var(--mono); font-size:.8rem; font-weight:600;}
+  .chg.up{color:var(--green-bright);} .chg.down{color:var(--red);}
+
+  /* ---- summary strip ---- */
+  .sum-strip{display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--glass-brd); border:1px solid var(--glass-brd); border-radius:14px; overflow:hidden;}
+  @media(max-width:1100px){.sum-strip{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:640px){.sum-strip{grid-template-columns:repeat(2,1fr);}}
+  .sum-cell{background:var(--bg-1); padding:20px;}
+  .sum-cell .label{font-size:.72rem; color:var(--ink-40); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;}
+  .sum-cell .value{font-family:var(--mono); font-size:1.2rem; font-weight:600;}
+
+  /* ---- movers ---- */
+  .movers-panel{padding:6px;}
+  .tabs{display:flex; gap:4px; padding:14px 14px 0;}
+  .tab{
+    font-family:var(--mono); font-size:.76rem; padding:8px 14px; border-radius:8px; cursor:pointer;
+    color:var(--ink-40); transition:background .15s, color .15s;
+  }
+  .tab.active{background:rgba(242,201,76,.1); color:var(--gold);}
+  .tab:hover:not(.active){color:var(--ink-60);}
+  table{width:100%; border-collapse:collapse;}
+  thead th{
+    text-align:left; font-family:var(--mono); font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-40); font-weight:500; padding:14px 20px 10px; border-bottom:1px solid var(--glass-brd);
+  }
+  tbody td{padding:13px 20px; font-size:.86rem; border-bottom:1px solid rgba(255,255,255,.04);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr{transition:background .15s;}
+  tbody tr:hover{background:rgba(255,255,255,.02);}
+  .cell-tkr{font-family:var(--mono); font-weight:600;}
+  .cell-name{color:var(--ink-40); font-size:.78rem; margin-top:2px;}
+  td.num{font-family:var(--mono); text-align:right;}
+  .mini-badge{font-family:var(--mono); font-weight:600; padding:3px 9px; border-radius:100px; font-size:.76rem; display:inline-block;}
+  .mini-badge.up{color:var(--green-bright); background:rgba(23,166,105,.12);}
+  .mini-badge.down{color:var(--red); background:rgba(200,16,46,.12);}
+  th.num, td.num{text-align:right;}
+
+  /* ---- two column ---- */
+  .two-col{display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:start;}
+  @media(max-width:1100px){.two-col{grid-template-columns:1fr;}}
+
+  /* ---- events list ---- */
+  .event-item{display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid rgba(255,255,255,.04);}
+  .event-item:last-child{border-bottom:none;}
+  .ev-left{display:flex; align-items:center; gap:14px;}
+  .ev-date{
+    font-family:var(--mono); font-size:.7rem; color:var(--gold); background:rgba(242,201,76,.08); border:1px solid rgba(242,201,76,.2);
+    border-radius:8px; padding:6px 9px; text-align:center; min-width:52px; line-height:1.3;
+  }
+  .ev-date b{display:block; font-size:.95rem;}
+  .ev-name{font-size:.86rem; font-weight:600;}
+  .ev-type{font-size:.74rem; color:var(--ink-40); margin-top:2px;}
+  .ev-tag{font-family:var(--mono); font-size:.72rem; padding:4px 10px; border-radius:100px; color:var(--green-bright); background:rgba(23,166,105,.1); white-space:nowrap;}
+
+  /* ---- economic overview ---- */
+  .econ-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px;}
+  .econ-cell{padding:18px 20px;}
+  .econ-cell .label{font-size:.76rem; color:var(--ink-40); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;}
+  .econ-cell .val{font-family:var(--mono); font-size:1.25rem; font-weight:600;}
+  .econ-cell .val small{font-family:var(--sans); font-size:.7rem; color:var(--ink-40); font-weight:400; margin-left:6px;}
+  .econ-cell .note{font-size:.72rem; color:var(--ink-40); margin-top:6px;}
+
+  footer.note{margin-top:8px; font-size:.76rem; color:var(--ink-40); font-family:var(--mono); padding:6px 4px;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <a class="logo" href="index.html" style="cursor:pointer;">
+      <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M3 17l5-6 4 4 8-10" stroke="#111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      Savannah Market
+    </a>
+    <div class="nav-group">
+      <span class="nav-label">Overview</span>
+      <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Markets</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></svg>Portfolio</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.3l-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.2z"/></svg>Watchlist</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-label">Intelligence</span>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>AI Insights</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>AI Assistant</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16V6l-4-4H4z"/><path d="M14 2v4h4"/></svg>News</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-label">Account</span>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>
+    </div>
+    <div class="sb-bottom">
+      <div class="plan-chip"><span>Free plan</span><span class="up-btn">Upgrade →</span></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <div class="topbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search Safaricom, KCB, Equity…" onkeydown="if(event.key==='Enter'){location.href='stock.html';}">
+      </div>
+      <div class="top-right">
+        <div class="icon-btn"><span class="dot-badge"></span><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+        <div class="user-chip">
+          <div class="avatar-sm"></div>
+          <div><div class="user-name">Investor</div><div class="user-plan">Free plan</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <h1>Dashboard</h1>
+          <div class="page-sub">Nairobi Securities Exchange · Main Board</div>
+        </div>
+        <div class="refresh-tag"><span class="dot"></span> Last session data · Friday, 31 Jul 2026</div>
+      </div>
+
+      <!-- ===== Indices ===== -->
+      <div class="sec-block">
+        <h2 class="sec-title">Indices <span class="as-of">as of 15 Jul 2026 close</span></h2>
+        <div class="index-row">
+          <div class="glass idx-card">
+            <div class="name">NSE All Share Index</div>
+            <div class="val">231.57</div>
+            <div class="chg down">-0.10% today · +24.1% YTD</div>
+          </div>
+          <div class="glass idx-card">
+            <div class="name">NSE 20 Share Index</div>
+            <div class="val">—</div>
+            <div class="chg" style="color:var(--ink-40)">Blue-chip index</div>
+          </div>
+          <div class="glass idx-card">
+            <div class="name">NSE 25 Share Index</div>
+            <div class="val">—</div>
+            <div class="chg" style="color:var(--ink-40)">Broad-cap index</div>
+          </div>
+          <div class="glass idx-card">
+            <div class="name">Market Capitalization</div>
+            <div class="val">KES 4.03T</div>
+            <div class="chg up">≈ USD 31.1B</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Market Summary ===== -->
+      <div class="sec-block">
+        <h2 class="sec-title">Market Summary <span class="as-of">Friday, 31 Jul 2026</span></h2>
+        <div class="sum-strip">
+          <div class="sum-cell"><div class="label">Turnover</div><div class="value">KES 910.7M</div></div>
+          <div class="sum-cell"><div class="label">Volume</div><div class="value">27.02M shrs</div></div>
+          <div class="sum-cell"><div class="label">Deals</div><div class="value">12,914</div></div>
+          <div class="sum-cell"><div class="label">Gainers / Losers</div><div class="value" style="color:var(--green-bright)">29 <span style="color:var(--ink-40)">/</span> <span style="color:var(--red)">22</span></div></div>
+          <div class="sum-cell"><div class="label">Unchanged</div><div class="value">8</div></div>
+        </div>
+      </div>
+
+      <!-- ===== Market Movers ===== -->
+      <div class="sec-block">
+        <h2 class="sec-title">Market Movers</h2>
+        <div class="glass movers-panel">
+          <div class="tabs">
+            <div class="tab active" data-tab="gainers">Top Gainers</div>
+            <div class="tab" data-tab="losers">Top Losers</div>
+            <div class="tab" data-tab="active">Most Active</div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Stock</th><th class="num">Price (KES)</th><th class="num">Change</th><th class="num">Volume</th></tr>
+            </thead>
+            <tbody id="moversBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- ===== Upcoming Events ===== -->
+        <div class="sec-block" style="margin-bottom:0;">
+          <h2 class="sec-title">Upcoming Events</h2>
+          <div class="glass">
+            <div class="event-item">
+              <div class="ev-left"><div class="ev-date">SEP<b>16</b></div><div><div class="ev-name">EABL Plc — book closure</div><div class="ev-type">Final dividend KES 6.00/share</div></div></div>
+              <span class="ev-tag">Dividend</span>
+            </div>
+            <div class="event-item">
+              <div class="ev-left"><div class="ev-date">SEP<b>12</b></div><div><div class="ev-name">KCB Group Plc — book closure</div><div class="ev-type">Interim dividend KES 1.50/share</div></div></div>
+              <span class="ev-tag">Dividend</span>
+            </div>
+            <div class="event-item">
+              <div class="ev-left"><div class="ev-date">AUG<b>30</b></div><div><div class="ev-name">BAT Kenya Plc — book closure</div><div class="ev-type">Interim dividend KES 5.00/share</div></div></div>
+              <span class="ev-tag">Dividend</span>
+            </div>
+            <div class="event-item">
+              <div class="ev-left"><div class="ev-date">JUN<b>23</b></div><div><div class="ev-name">Family Bank Plc — NSE debut</div><div class="ev-type">CMA-approved listing</div></div></div>
+              <span class="ev-tag" style="color:var(--gold); background:rgba(242,201,76,.1)">Listing</span>
+            </div>
+            <div class="event-item">
+              <div class="ev-left"><div class="ev-date">MAR<b>11</b></div><div><div class="ev-name">ALP Industrial REIT — debut</div><div class="ev-type">115% oversubscribed placement</div></div></div>
+              <span class="ev-tag" style="color:var(--gold); background:rgba(242,201,76,.1)">Listing</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Economic Overview ===== -->
+        <div class="sec-block" style="margin-bottom:0;">
+          <h2 class="sec-title">Economic Overview</h2>
+          <div class="econ-grid">
+            <div class="glass econ-cell">
+              <div class="label">Inflation (YoY)</div>
+              <div class="val">6.4%<small>Jun 2026</small></div>
+              <div class="note">Eased from 6.7% in May</div>
+            </div>
+            <div class="glass econ-cell">
+              <div class="label">Central Bank Rate</div>
+              <div class="val">8.75%<small>held</small></div>
+              <div class="note">Retained at 9 Jun 2026 MPC meeting</div>
+            </div>
+            <div class="glass econ-cell">
+              <div class="label">USD / KES</div>
+              <div class="val">130.13</div>
+              <div class="note">Shilling -0.75% over past month</div>
+            </div>
+            <div class="glass econ-cell">
+              <div class="label">CBK Policy Stance</div>
+              <div class="val" style="font-size:1rem;">Held steady</div>
+              <div class="note">Since June 2026 MPC decision</div>
+            </div>
+          </div>
+          <footer class="note">Source: Central Bank of Kenya, Trading Economics.</footer>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const movers = {
+    gainers: [
+      {t:'HFCB', name:'HFCB Group', price:'12.70', chg:'+4.96%', up:true, vol:'620K'},
+      {t:'FTBK', name:'Family Bank', price:'—', chg:'+4.83%', up:true, vol:'—'},
+      {t:'KNRE', name:'Kenya Re-Insurance', price:'—', chg:'+4.12%', up:true, vol:'5.17M'},
+      {t:'UNGA', name:'Unga Group', price:'—', chg:'+3.05%', up:true, vol:'—'},
+    ],
+    losers: [
+      {t:'TPSE', name:'TPS Eastern Africa (Serena)', price:'15.00', chg:'-5.36%', up:false, vol:'—'},
+      {t:'EGAD', name:'Eaagads', price:'—', chg:'-3.64%', up:false, vol:'—'},
+      {t:'EVRD', name:'Eveready East Africa', price:'—', chg:'-1.92%', up:false, vol:'1.37M'},
+      {t:'KPLC', name:'Kenya Power & Lighting', price:'—', chg:'-1.87%', up:false, vol:'—'},
+    ],
+    active: [
+      {t:'SCOM', name:'Safaricom Plc', price:'36.50', chg:'+0.80%', up:true, vol:'9.17M'},
+      {t:'KNRE', name:'Kenya Re-Insurance', price:'—', chg:'+4.12%', up:true, vol:'5.17M'},
+      {t:'KCB', name:'KCB Group', price:'85.75', chg:'+3.10%', up:true, vol:'3.09M'},
+      {t:'EVRD', name:'Eveready East Africa', price:'—', chg:'-1.92%', up:false, vol:'1.37M'},
+    ]
+  };
+  const tbody = document.getElementById('moversBody');
+  function render(tab){
+    tbody.innerHTML = movers[tab].map(r => {
+      const clickable = r.t === 'SCOM';
+      return `
+      <tr${clickable ? ' style="cursor:pointer" onclick="location.href=\'stock.html\'"' : ''}>
+        <td><div class="cell-tkr">${r.t}</div><div class="cell-name">${r.name}</div></td>
+        <td class="num">${r.price === '—' ? '—' : 'KES ' + r.price}</td>
+        <td class="num"><span class="mini-badge ${r.up?'up':'down'}">${r.chg}</span></td>
+        <td class="num">${r.vol}</td>
+      </tr>`;
+    }).join('');
+  }
+  render('gainers');
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      render(tab.dataset.tab);
+    });
+  });
+</script>
+
+</body>
+</html>
