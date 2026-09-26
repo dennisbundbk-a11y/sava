@@ -6,9 +6,10 @@ scheduled Gemini + Telegram briefing.
 ## What's in this repo
 
 ```
-index.html            Marketing landing page
-dashboard.html         Market dashboard (summary, movers, economic overview)
-stock.html              Individual stock page (Safaricom / SCOM worked example)
+public/
+  index.html            Marketing landing page
+  dashboard.html         Market dashboard (summary, movers, economic overview)
+  stock.html              Individual stock page (Safaricom / SCOM worked example)
 
 api/cron/briefing.js    Vercel serverless function — runs the daily briefing
 lib/                     Shared backend code (market data, Gemini, Telegram, math)
@@ -39,9 +40,12 @@ git push -u origin main
 ## 2. Deploy on Vercel
 
 1. Go to https://vercel.com/new and import the GitHub repo.
-2. Framework preset: choose **"Other"** — there's no framework to detect,
-   and Vercel will serve the root `.html` files as static pages and
-   `api/cron/briefing.js` as a serverless function automatically.
+2. Framework preset: choose **"Other"** — `vercel.json` sets
+   `"outputDirectory": "public"` so Vercel knows to serve the pages in
+   `public/` as the site, and treats `api/cron/briefing.js` as a serverless
+   function automatically. (If you ever see a deployed link download a file
+   instead of opening the page, this setting is almost always why — check
+   Project Settings → General → Output Directory is set to `public`.)
 3. Before the first deploy (or right after, then redeploy), add these
    under **Project Settings → Environment Variables**:
    - `GEMINI_API_KEY`
@@ -111,17 +115,45 @@ curl -H "Authorization: Bearer <your CRON_SECRET>" \
   https://<project>.vercel.app/api/cron/briefing
 ```
 
-## 7. Market data — read before relying on it
+## 7. Market data — Apify (primary) + scraper (fallback)
 
-`lib/fetchMarketData.js` scrapes a public NSE summary page as a fallback so
-this works out of the box, and degrades gracefully (rather than crashing)
-if the page structure changes and prices come back empty. For anything
-beyond personal, low-frequency use, replace it with a licensed/paid NSE
-data provider — the platform's own spec calls for respecting NSE data
-licensing, and scraped pages can change or restrict access without notice.
-The function signature is the only thing the rest of the code depends on,
-so swapping the data source doesn't require touching `gemini.js`,
-`telegram.js`, or the API route.
+**Apify setup:**
+1. Create an account at https://apify.com and go to Console → Settings →
+   Integrations → **Personal API tokens**. Copy a token.
+2. Set `APIFY_TOKEN` (and optionally `APIFY_ACTOR_ID`, default is
+   `mansalabs/african-stock-market-data`) in `.env` locally, and as Vercel
+   env vars for production.
+3. Apify actors are pay-per-result/pay-per-run — check the actor's pricing
+   tab before running it on a daily schedule.
+
+**Verify it actually works before trusting it:** Apify's own docs pages
+don't show a fully worked example of the JSON each actor returns, so
+`lib/fetchMarketData.js` makes a best-effort guess at field names
+(`normalizeQuote()`). The first time you run `npm run once`:
+- If it works, great — quotes will show up in the Telegram message.
+- If quotes come back empty, the console will log a sample raw item from
+  Apify. Compare its actual keys against `normalizeQuote()` in
+  `lib/fetchMarketData.js` and adjust the field names to match.
+- You can also open the run directly in Apify Console (Actors → Runs) to
+  inspect the dataset visually.
+
+If `mansalabs/african-stock-market-data`'s NSE coverage doesn't work out,
+`wafspaul/nse-kenya-market-data` is a narrower alternative built
+specifically for the NSE (returns gainers/losers/most-active directly) —
+swap `APIFY_ACTOR_ID` and adjust the input object in
+`APIFY_ACTOR_INPUT` inside `lib/fetchMarketData.js` accordingly.
+
+**Fallback scraper:** if `APIFY_TOKEN` is blank, or the Apify call fails,
+`getMarketSnapshot()` falls back to scraping `MARKET_DATA_URL` directly
+(a public NSE summary page). This is more fragile — plain HTML parsing
+breaks silently if the page layout changes — but means the pipeline still
+runs with no Apify account at all.
+
+For anything beyond personal, low-frequency use, remember the platform's
+own spec calls for respecting NSE data licensing — a scraped page (via
+Apify or directly) isn't a licensed feed. See the official routes discussed
+in-chat (NSE's own Data Services API, or their list of licensed vendors) if
+this becomes a real product rather than a personal tool.
 
 ## 8. What the briefing actually says
 
