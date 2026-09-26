@@ -6,9 +6,10 @@ scheduled Gemini + Telegram briefing.
 ## What's in this repo
 
 ```
-index.html            Marketing landing page
-dashboard.html         Market dashboard (summary, movers, economic overview)
-stock.html              Individual stock page (Safaricom / SCOM worked example)
+public/
+  index.html            Marketing landing page
+  dashboard.html         Market dashboard (summary, movers, economic overview)
+  stock.html              Individual stock page (Safaricom / SCOM worked example)
 
 api/cron/briefing.js    Vercel serverless function — runs the daily briefing
 lib/                     Shared backend code (market data, Gemini, Telegram, math)
@@ -39,9 +40,12 @@ git push -u origin main
 ## 2. Deploy on Vercel
 
 1. Go to https://vercel.com/new and import the GitHub repo.
-2. Framework preset: choose **"Other"** — there's no framework to detect,
-   and Vercel will serve the root `.html` files as static pages and
-   `api/cron/briefing.js` as a serverless function automatically.
+2. Framework preset: choose **"Other"** — `vercel.json` sets
+   `"outputDirectory": "public"` so Vercel knows to serve the pages in
+   `public/` as the site, and treats `api/cron/briefing.js` as a serverless
+   function automatically. (If you ever see a deployed link download a file
+   instead of opening the page, this setting is almost always why — check
+   Project Settings → General → Output Directory is set to `public`.)
 3. Before the first deploy (or right after, then redeploy), add these
    under **Project Settings → Environment Variables**:
    - `GEMINI_API_KEY`
