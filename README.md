@@ -120,6 +120,7 @@ curl -H "Authorization: Bearer <your CRON_SECRET>" \
 **Apify setup:**
 1. Create an account at https://apify.com and go to Console → Settings →
    Integrations → **Personal API tokens**. Copy a token.
+<<<<<<< HEAD
 2. Set `APIFY_TOKEN` (and optionally `APIFY_ACTOR_ID` /
    `APIFY_EXCHANGE_CODE`, defaults are `mansalabs/african-stock-market-data`
    and `NSE`) in `.env` locally, and as Vercel env vars for production.
@@ -147,13 +148,36 @@ tries several likely field names. The first time you run `npm run once`:
 - You can also open the run directly in Apify Console (Actors → Runs) to
   inspect the dataset visually, or send `{ "dataset": "exchanges" }` as
   input to confirm `"NSE"` is the correct exchange code.
+=======
+2. Set `APIFY_TOKEN` (and optionally `APIFY_ACTOR_ID`, default is
+   `mansalabs/african-stock-market-data`) in `.env` locally, and as Vercel
+   env vars for production.
+3. Apify actors are pay-per-result/pay-per-run — check the actor's pricing
+   tab before running it on a daily schedule.
+
+**Verify it actually works before trusting it:** Apify's own docs pages
+don't show a fully worked example of the JSON each actor returns, so
+`lib/fetchMarketData.js` makes a best-effort guess at field names
+(`normalizeQuote()`). The first time you run `npm run once`:
+- If it works, great — quotes will show up in the Telegram message.
+- If quotes come back empty, the console will log a sample raw item from
+  Apify. Compare its actual keys against `normalizeQuote()` in
+  `lib/fetchMarketData.js` and adjust the field names to match.
+- You can also open the run directly in Apify Console (Actors → Runs) to
+  inspect the dataset visually.
+>>>>>>> 62df049dc701d788e7a8b08cddd41e59e57f8f2c
 
 If `mansalabs/african-stock-market-data`'s NSE coverage doesn't work out,
 `wafspaul/nse-kenya-market-data` is a narrower alternative built
 specifically for the NSE (returns gainers/losers/most-active directly) —
+<<<<<<< HEAD
 swap `APIFY_ACTOR_ID` and adjust the input fields in `fetchFromApify()`
 inside `lib/fetchMarketData.js` accordingly (its input schema will differ
 from this one).
+=======
+swap `APIFY_ACTOR_ID` and adjust the input object in
+`APIFY_ACTOR_INPUT` inside `lib/fetchMarketData.js` accordingly.
+>>>>>>> 62df049dc701d788e7a8b08cddd41e59e57f8f2c
 
 **Fallback scraper:** if `APIFY_TOKEN` is blank, or the Apify call fails,
 `getMarketSnapshot()` falls back to scraping `MARKET_DATA_URL` directly
