@@ -199,16 +199,16 @@
           </div>
         </div>
         <div class="sh-right">
-          <div class="sh-price">KES 36.50</div>
-          <div class="sh-chg up">▲ +0.30 (+0.83%)</div>
-          <div class="sh-asof">Last close · Friday, 31 Jul 2026</div>
+          <div class="sh-price" id="shPrice">KES 36.50</div>
+          <div class="sh-chg up" id="shChg">▲ +0.30 (+0.83%)</div>
+          <div class="sh-asof" id="shAsOf">Last close · Friday, 31 Jul 2026</div>
         </div>
       </div>
 
       <div class="key-row">
         <div class="key-cell"><div class="label">Market Cap</div><div class="value">KES 1.46T</div></div>
         <div class="key-cell"><div class="label">Shares Outstanding</div><div class="value">40.07B</div></div>
-        <div class="key-cell"><div class="label">Volume (today)</div><div class="value">9.17M</div></div>
+        <div class="key-cell"><div class="label">Volume (today)</div><div class="value" id="keyVolume">9.17M</div></div>
         <div class="key-cell"><div class="label">P/E (trailing)</div><div class="value">14.92x</div></div>
         <div class="key-cell"><div class="label">Dividend Yield</div><div class="value">6.46%</div></div>
         <div class="key-cell"><div class="label">Beta</div><div class="value">0.59</div></div>
@@ -302,18 +302,18 @@
 
       <!-- ===== AI Investment Score ===== -->
       <div class="sec-block">
-        <h2 class="sec-title">AI Investment Score</h2>
+        <h2 class="sec-title">AI Investment Score <span class="as-of" id="scoreStatus">Asking Gemini…</span></h2>
         <div class="glass score-panel">
           <div class="score-left">
-            <div class="score-num">92<span>/100</span></div>
-            <div class="score-rec">Strong Buy</div>
-            <div class="score-conf">95% confidence</div>
-            <p style="color:var(--ink-60); font-size:.87rem; line-height:1.65; margin-top:16px;">
+            <div class="score-num" id="scoreNum">92<span>/100</span></div>
+            <div class="score-rec" id="scoreRec">Strong Buy</div>
+            <div class="score-conf" id="scoreConf">95% confidence</div>
+            <p style="color:var(--ink-60); font-size:.87rem; line-height:1.65; margin-top:16px;" id="scoreSummary">
               Revenue and cash flow are trending up, ROE stands out at 32.4%, and the newly restored KES 2.00/share dividend removes a multi-year overhang. The stock remains the most heavily traded counter on the exchange, with the Vodacom stake sale keeping positioning active.
             </p>
           </div>
           <div class="score-right">
-            <ul class="factor-list">
+            <ul class="factor-list" id="factorList">
               <li><span class="factor-name">Revenue growth</span><span class="factor-bar"><span class="factor-fill" style="width:82%"></span></span><span class="factor-val">82</span></li>
               <li><span class="factor-name">Dividend stability</span><span class="factor-bar"><span class="factor-fill" style="width:88%"></span></span><span class="factor-val">88</span></li>
               <li><span class="factor-name">Cash flow</span><span class="factor-bar"><span class="factor-fill" style="width:90%"></span></span><span class="factor-val">90</span></li>
@@ -340,6 +340,63 @@
 </div>
 
 <script>
+  const TICKER = 'SCOM';
+
+  // ---------- live price header ----------
+  async function loadLivePrice(){
+    try {
+      const res = await fetch('/api/market-snapshot');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const snapshot = await res.json();
+      const q = snapshot.quotes[TICKER];
+      if (!q || q.price == null) throw new Error('No live quote for ' + TICKER);
+
+      document.getElementById('shPrice').textContent = 'KES ' + q.price.toFixed(2);
+      const chg = q.changePct ?? 0;
+      const chgEl = document.getElementById('shChg');
+      chgEl.textContent = (chg >= 0 ? '▲ ' : '▼ ') + (chg >= 0 ? '+' : '') + chg + '%';
+      chgEl.className = 'sh-chg ' + (chg >= 0 ? 'up' : 'down');
+      document.getElementById('shAsOf').textContent = 'Live · ' + new Date(snapshot.asOf).toLocaleString();
+      if (q.volume != null) {
+        document.getElementById('keyVolume').textContent = q.volume >= 1e6 ? (q.volume/1e6).toFixed(2)+'M' : q.volume;
+      }
+    } catch (err) {
+      console.error('[stock] live price unavailable, keeping example data:', err.message);
+      document.getElementById('shAsOf').textContent = 'Example data (last researched 31 Jul 2026) — live feed unavailable';
+    }
+  }
+
+  // ---------- live AI investment score ----------
+  async function loadAiScore(){
+    const statusEl = document.getElementById('scoreStatus');
+    try {
+      const res = await fetch('/api/ai-score?ticker=' + TICKER);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (typeof data.score !== 'number') throw new Error('Malformed response');
+
+      document.getElementById('scoreNum').innerHTML = data.score + '<span>/100</span>';
+      document.getElementById('scoreRec').textContent = data.recommendation || '—';
+      document.getElementById('scoreConf').textContent = (data.confidence ?? '—') + '% confidence';
+      document.getElementById('scoreSummary').textContent = data.summary || '';
+
+      const list = document.getElementById('factorList');
+      list.innerHTML = (data.factors || []).map(f => `
+        <li><span class="factor-name">${f.name}</span><span class="factor-bar"><span class="factor-fill" style="width:${f.value}%"></span></span><span class="factor-val">${f.value}</span></li>
+      `).join('');
+
+      statusEl.textContent = 'Live from Gemini · ' + new Date(data.asOf || Date.now()).toLocaleTimeString();
+      statusEl.style.color = 'var(--green-bright)';
+    } catch (err) {
+      console.error('[stock] AI score unavailable, showing example data:', err.message);
+      statusEl.textContent = 'Example data — AI score unavailable right now';
+      statusEl.style.color = 'var(--ink-40)';
+    }
+  }
+
+  loadLivePrice();
+  loadAiScore();
+
   // price chart per range — anchored on real known points where available (Jan 1 2026: 28.35, 31 Jul 2026: 36.50)
   const ranges = {
     '1D': {points: 24, vol: 0.4, base: 36.2, end: 36.5},
