@@ -155,7 +155,30 @@ Apify or directly) isn't a licensed feed. See the official routes discussed
 in-chat (NSE's own Data Services API, or their list of licensed vendors) if
 this becomes a real product rather than a personal tool.
 
-## 8. What the briefing actually says
+## 8. Live data on the website itself
+
+Two public, read-only API routes power the frontend (separate from the
+Telegram cron job, which still runs on its own schedule):
+
+- **`/api/market-snapshot`** — calls the same `getMarketSnapshot()` used by
+  the briefing (Apify, or the scraper fallback). `dashboard.html`'s Market
+  Movers table and `stock.html`'s price header fetch this on page load.
+- **`/api/ai-score?ticker=SCOM`** — calls Gemini fresh for the given ticker
+  and returns a score, recommendation, confidence, and factor breakdown as
+  JSON. `stock.html`'s AI Investment Score panel fetches this on page load.
+
+Both routes hold their credentials server-side — the browser never sees
+`GEMINI_API_KEY` or the Apify token. Both need the matching env vars set in
+Vercel to return real data (`APIFY_TOKEN` for live movers, `GEMINI_API_KEY`
+for the AI score); without them, the pages fall back to showing the
+original example data and label it as such (a small status line next to
+each section's heading says "Live" or "Example data — … unavailable" so
+it's always clear which mode is active).
+
+The landing page (`index.html`) still shows fixed example numbers by
+design — it's a marketing preview, not the live app.
+
+## 9. What the Telegram briefing actually says
 
 Gemini is given only your holdings, current prices, and today's movers, and
 is explicitly told not to invent prices or news. Every report ends with:
