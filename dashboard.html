@@ -253,7 +253,7 @@
 
       <!-- ===== Market Movers ===== -->
       <div class="sec-block">
-        <h2 class="sec-title">Market Movers</h2>
+        <h2 class="sec-title">Market Movers <span class="as-of" id="moversStatus">Loading live data…</span></h2>
         <div class="glass movers-panel">
           <div class="tabs">
             <div class="tab active" data-tab="gainers">Top Gainers</div>
@@ -330,7 +330,11 @@
 </div>
 
 <script>
-  const movers = {
+  // Static example data — used only as a fallback if the live API call
+  // below fails (e.g. Apify/Gemini not configured yet), so the page never
+  // shows an empty table. moversStatus text makes it obvious which mode
+  // is active.
+  const fallbackMovers = {
     gainers: [
       {t:'HFCB', name:'HFCB Group', price:'12.70', chg:'+4.96%', up:true, vol:'620K'},
       {t:'FTBK', name:'Family Bank', price:'—', chg:'+4.83%', up:true, vol:'—'},
@@ -350,20 +354,87 @@
       {t:'EVRD', name:'Eveready East Africa', price:'—', chg:'-1.92%', up:false, vol:'1.37M'},
     ]
   };
+  // Company names for tickers the live API only gives us a symbol for.
+  const tickerNames = {
+    SCOM:'Safaricom Plc', KCB:'KCB Group', EQTY:'Equity Bank', COOP:'Co-operative Bank',
+    EABL:'EABL', KEGN:'KenGen', BAT:'BAT Kenya', ABSA:'Absa Kenya', NCBA:'NCBA',
+    KPLC:'Kenya Power & Lighting', HFCB:'HFCB Group', FTBK:'Family Bank',
+    KNRE:'Kenya Re-Insurance', UNGA:'Unga Group', TPSE:'TPS Eastern Africa (Serena)',
+    EGAD:'Eaagads', EVRD:'Eveready East Africa',
+  };
+
+  let movers = fallbackMovers;
   const tbody = document.getElementById('moversBody');
+  const moversStatus = document.getElementById('moversStatus');
+
   function render(tab){
     tbody.innerHTML = movers[tab].map(r => {
       const clickable = r.t === 'SCOM';
       return `
       <tr${clickable ? ' style="cursor:pointer" onclick="location.href=\'stock.html\'"' : ''}>
         <td><div class="cell-tkr">${r.t}</div><div class="cell-name">${r.name}</div></td>
-        <td class="num">${r.price === '—' ? '—' : 'KES ' + r.price}</td>
+        <td class="num">${r.price === '—' || r.price == null ? '—' : 'KES ' + r.price}</td>
         <td class="num"><span class="mini-badge ${r.up?'up':'down'}">${r.chg}</span></td>
-        <td class="num">${r.vol}</td>
+        <td class="num">${r.vol ?? '—'}</td>
       </tr>`;
     }).join('');
   }
+
+  function activeTabKey(){
+    return document.querySelector('.tab.active')?.dataset.tab || 'gainers';
+  }
+
+  function moverRow(m){
+    const chgNum = m.changePct;
+    return {
+      t: m.ticker,
+      name: tickerNames[m.ticker] || m.ticker,
+      price: m.price ?? '—',
+      chg: (chgNum > 0 ? '+' : '') + (chgNum ?? 0) + '%',
+      up: chgNum >= 0,
+      vol: m.volume != null ? formatVolume(m.volume) : '—',
+    };
+  }
+  function formatVolume(v){
+    if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+    if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+    return String(v);
+  }
+
+  async function loadLiveMovers(){
+    try {
+      const res = await fetch('/api/market-snapshot');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const snapshot = await res.json();
+
+      const withPrice = (m) => ({ ...m, price: snapshot.quotes[m.ticker]?.price, volume: snapshot.quotes[m.ticker]?.volume });
+      const gainers = (snapshot.topGainers || []).map(withPrice).map(moverRow);
+      const losers = (snapshot.topLosers || []).map(withPrice).map(moverRow);
+      const active = Object.entries(snapshot.quotes || {})
+        .filter(([, q]) => q.volume != null)
+        .sort((a, b) => b[1].volume - a[1].volume)
+        .slice(0, 4)
+        .map(([ticker, q]) => moverRow({ ticker, changePct: q.changePct, price: q.price, volume: q.volume }));
+
+      if (gainers.length === 0 && losers.length === 0 && active.length === 0) {
+        throw new Error('Live snapshot returned no usable data');
+      }
+
+      movers = { gainers: gainers.length ? gainers : fallbackMovers.gainers, losers: losers.length ? losers : fallbackMovers.losers, active: active.length ? active : fallbackMovers.active };
+      moversStatus.textContent = 'Live · updated ' + new Date(snapshot.asOf).toLocaleTimeString();
+      moversStatus.style.color = 'var(--green-bright)';
+    } catch (err) {
+      console.error('[dashboard] live market data unavailable, showing example data:', err.message);
+      movers = fallbackMovers;
+      moversStatus.textContent = 'Example data — live feed unavailable';
+      moversStatus.style.color = 'var(--ink-40)';
+    }
+    render(activeTabKey());
+  }
+
   render('gainers');
+  loadLiveMovers();
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
