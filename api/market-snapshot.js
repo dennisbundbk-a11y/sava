@@ -1,23 +1,20 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { getMarketSnapshot } from '../lib/fetchMarketData.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Static require() (not fs.readFile) so Vercel's build-time file tracer
+// actually bundles these JSON files into the deployed function. A dynamic
+// fs.readFile(path.join(...)) call at runtime is NOT detected by that
+// tracer and silently fails to find the file in production.
+const require = createRequire(import.meta.url);
+const portfolio = require('../data/portfolio.json');
+const watchlist = require('../data/watchlist.json');
 
 // Public, read-only endpoint the website's frontend calls directly — no
 // Gemini or Telegram credentials involved here, just market data. Returns:
 // { asOf, quotes: { [ticker]: { price, changePct, volume } }, topGainers, topLosers }
 export default async function handler(req, res) {
   try {
-    const [portfolioRaw, watchlistRaw] = await Promise.all([
-      fs.readFile(path.join(__dirname, '..', 'data', 'portfolio.json'), 'utf-8'),
-      fs.readFile(path.join(__dirname, '..', 'data', 'watchlist.json'), 'utf-8'),
-    ]);
-    const portfolio = JSON.parse(portfolioRaw);
-    const watchlist = JSON.parse(watchlistRaw);
     const tickers = [...new Set([...portfolio.map((h) => h.ticker), ...watchlist])];
-
     const snapshot = await getMarketSnapshot(tickers);
 
     res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
